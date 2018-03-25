@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * @file
+ * This block module is used to view the top 5 most recent article nodes
+ */
+
+ // Function to define Block Information for Custom inventionblock Module
+ function inventionblock_block_info() {
+
+ // Function to define Block Informaion
+  $blocks['myblock'] = array(
+
+ // Block Name
+    'info' => t('5 List Block'),
+  );
+  return $blocks;
+}
+
+ // Function to define contentList for Custom inventionblock Module
+function contentList()
+{
+
+ // Declare output
+    $output = '<p>';
+
+ // use db select to select node table and use n as ref
+$query = db_select('node', 'n');
+
+ // Join node and field data tables  to view summary of associated node 
+$query-> leftJoin('field_data_body','f','n.vid = f.entity_id');
+
+ // Start list to capture query
+$list = $query
+ 
+ // Select title and changed from node table
+->fields('n', array('title', 'changed'))
+
+ // select body value from field data body table
+->fields('f', array('body_value'))
+
+ // use condition to search for word Invention in results
+->condition('title', '%Invention%', 'LIKE')
+
+ // make sure the type is article
+->condition('type', 'ARTICLE', 'LIKE')
+
+ // order most recent ontop
+->orderBy('nid', 'DESC')
+
+ // limit to 5 results
+->range(0,5);
+
+ // execute the list and store in result
+$result = $list->execute();
+
+ // fetch details of result into article array and while this is being done...
+while ($article = $result->fetchAssoc()) 
+{
+
+ // adjust the date from unix timestamp
+    $article['changed'] = gmdate("F j, Y, g:i a", $article['changed']);
+
+ // create output file to use in contents using article array
+    $output .= '<span id="article_h1">' . $article['title'] .'<p><span id="article_updated">Updated: '. $article['changed'] . '<p><span id="article_body">' . $article['body_value'] . '<p>';
+}
+
+ // Return the output text
+    return $output;
+}
+    
+ // Function to define view the custom module block
+function inventionblock_block_view($delta = '') {
+
+   switch ($delta) {
+ // if cause is myblock, which in this case is the only one
+    case 'myblock':
+
+    // create this block title
+    $block['subject'] = t('Top 5 List using Module');
+
+ // use the contentList function to store content in custom block
+    $block['content'] = contentList();
+    
+        }
+
+ // return the block
+  return $block;
+}
